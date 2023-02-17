@@ -62,7 +62,7 @@ public class Walk {
                 fileName = reader.readLine();
                 if (fileName == null)
                     break;
-                if (new File(fileName).isFile() && new File(fileName).exists()) {
+                if (new File(fileName).isFile()) {
                     hash = countHash(fileName);
                 } else if (new File(fileName).isDirectory()) {
                     writer.write(badFileHash + " " + fileName + System.lineSeparator());
