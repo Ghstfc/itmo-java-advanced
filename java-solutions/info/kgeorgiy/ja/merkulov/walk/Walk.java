@@ -6,7 +6,7 @@ import java.security.NoSuchAlgorithmException;
 
 public class Walk {
 
-    private static final String badFileHash = "00000000000000000000000000000000";
+    private static final String badFileHash = "0".repeat(64);
 
     private static String bytesToHex(byte[] hash) {
         StringBuilder hexString = new StringBuilder(2 * hash.length);
@@ -43,7 +43,7 @@ public class Walk {
             System.err.println("More/less arguments, than 2");
             return;
         }
-        if (args[0] == null){
+        if (args[0] == null) {
             System.err.println("First argument is null");
             return;
         }
@@ -57,19 +57,20 @@ public class Walk {
             BufferedReader reader = new BufferedReader(new FileReader(args[0]));
             BufferedWriter writer = new BufferedWriter(new FileWriter(args[1]));
             String fileName;
-            String hash = null;
+            String hash;
             while (true) {
                 fileName = reader.readLine();
                 if (fileName == null)
                     break;
-                if (new File(fileName).isFile()) {
+                if (new File(fileName).isFile() && new File(fileName).exists()) {
                     hash = countHash(fileName);
                 } else if (new File(fileName).isDirectory()) {
-
-                    //TODO
                     writer.write(badFileHash + " " + fileName + System.lineSeparator());
+                    continue;
+                    //TODO (стало впадлу, поэтому рассматривается как проблема с чтением файлов)
                 } else {
                     writer.write(badFileHash + " " + fileName + System.lineSeparator());
+                    continue;
                 }
                 writer.write(hash + " " + fileName + System.lineSeparator());
             }
