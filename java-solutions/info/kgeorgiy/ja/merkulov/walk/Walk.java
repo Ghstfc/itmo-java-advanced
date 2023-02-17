@@ -24,6 +24,7 @@ public class Walk {
         byte[] buffer = new byte[8192];
         int count;
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        // :NOTE: try-resource
         BufferedInputStream bis = new BufferedInputStream(new FileInputStream(fileName));
         while ((count = bis.read(buffer)) > 0) {
             digest.update(buffer, 0, count);
@@ -52,7 +53,7 @@ public class Walk {
             return;
         }
 
-
+        // :NOTE: try-resources, UTF-8
         try {
             BufferedReader reader = new BufferedReader(new FileReader(args[0]));
             BufferedWriter writer = new BufferedWriter(new FileWriter(args[1]));
