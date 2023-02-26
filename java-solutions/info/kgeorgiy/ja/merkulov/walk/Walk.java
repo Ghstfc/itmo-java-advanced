@@ -1,6 +1,11 @@
 package info.kgeorgiy.ja.merkulov.walk;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -20,17 +25,23 @@ public class Walk {
         return hexString.toString();
     }
 
-    private static String countHash(String fileName) throws NoSuchAlgorithmException, IOException {
+    private static String countHash(String fileName) throws NoSuchAlgorithmException {
         byte[] buffer = new byte[8192];
         int count;
+        byte[] hash = null;
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        // :NOTE: try-resource
-        BufferedInputStream bis = new BufferedInputStream(new FileInputStream(fileName));
-        while ((count = bis.read(buffer)) > 0) {
-            digest.update(buffer, 0, count);
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(fileName))) {
+            while ((count = bis.read(buffer)) > 0) {
+                digest.update(buffer, 0, count);
+            }
+            bis.close();
+            hash = digest.digest();
+
+        } catch (FileNotFoundException e) {
+            System.err.println(e.getMessage() + " File not found");
+        } catch (IOException e) {
+            System.err.println(e.getMessage() + "Can't read file");
         }
-        bis.close();
-        byte[] hash = digest.digest();
         return bytesToHex(hash);
     }
 
@@ -53,37 +64,45 @@ public class Walk {
             return;
         }
 
-        // :NOTE: try-resources, UTF-8
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(args[0]));
-            BufferedWriter writer = new BufferedWriter(new FileWriter(args[1]));
-            String fileName;
-            String hash;
-            while (true) {
-                fileName = reader.readLine();
-                if (fileName == null)
-                    break;
-                if (new File(fileName).isFile()) {
-                    hash = countHash(fileName);
-                } else if (new File(fileName).isDirectory()) {
-                    writer.write(badFileHash + " " + fileName + System.lineSeparator());
-                    continue;
-                    //TODO (стало впадлу, поэтому рассматривается как проблема с чтением файлов)
-                } else {
-                    writer.write(badFileHash + " " + fileName + System.lineSeparator());
-                    continue;
+        try (BufferedReader reader = Files.newBufferedReader(Paths.get(args[0]), StandardCharsets.UTF_8)) {
+            Path path = Paths.get(args[1]);
+            if (path.getParent() != null && Files.notExists(path.getParent())) {
+                try {
+                    Files.createDirectories(path.getParent());
+                } catch (IOException e) {
+                    System.err.println("Parent directory isn't exists");
                 }
-                writer.write(hash + " " + fileName + System.lineSeparator());
             }
-            writer.close();
-            reader.close();
-
-        } catch (NoSuchAlgorithmException e) {
-            System.err.println("No such algorithm");
-        } catch (FileNotFoundException e) {
-            System.err.println(" file not found");
+            try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
+                String fileName;
+                String hash;
+                while (true) {
+                    fileName = reader.readLine();
+                    if (fileName == null)
+                        break;
+                    try {
+                        Path pathOfSource = Paths.get(fileName);
+                        if (Files.exists(pathOfSource) && !Files.isDirectory(pathOfSource)) {
+                            hash = countHash(fileName);
+                            writer.write(hash + " " + fileName + System.lineSeparator());
+                        } else {
+                            writer.write(badFileHash + " " + fileName + System.lineSeparator());
+                        }
+                    } catch (InvalidPathException ignored) {
+                        writer.write(badFileHash + " " + fileName + System.lineSeparator());
+                    }
+                }
+            } catch (IOException e) {
+                System.err.println(e.getMessage() + " Can't write in output file");
+            } catch (NoSuchAlgorithmException e) {
+                System.err.println(e.getMessage() + " No such algorithm");
+            } catch (InvalidPathException e) {
+                System.err.println(e.getMessage() + " No such file/path");
+            }
         } catch (IOException e) {
-            System.err.println(" can't read/write file");
+            System.err.println(e.getMessage() + "Can't read in input file");
+        } catch (InvalidPathException e) {
+            System.err.println(e.getMessage() + " No such file/path");
         }
     }
 }
