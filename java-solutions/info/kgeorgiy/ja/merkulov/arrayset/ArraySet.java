@@ -14,9 +14,11 @@ public class ArraySet<E extends Comparable<? super E>> extends AbstractSet<E> im
     }
 
     public ArraySet(Collection<E> collection) {
+        // :NOTE: вынести
         elements = new ArrayList<>();
         TreeSet<E> treeSet = new TreeSet<>(collection);
         elements.addAll(treeSet);
+        // :NOTE: не надо
         Collections.sort(elements);
         comparator = null;
     }
@@ -63,13 +65,15 @@ public class ArraySet<E extends Comparable<? super E>> extends AbstractSet<E> im
 
     @Override
     public E first() {
-        if (elements.isEmpty())
+        if (elements.isEmpty()) {
             throw new NoSuchElementException("ArraySet is empty");
+        }
         return elements.get(0);
     }
 
     @Override
     public E last() {
+        // :NOTE: скобочки
         if (elements.isEmpty())
             throw new NoSuchElementException("ArraySet is empty");
         return elements.get(elements.size() - 1);
