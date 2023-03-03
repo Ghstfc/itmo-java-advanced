@@ -42,11 +42,10 @@ public class ArraySet<E extends Comparable<? super E>> extends AbstractSet<E> im
 
     @Override
     public SortedSet<E> subSet(E fromElement, E toElement) {
-        if (comparator != null && comparator.compare(fromElement, toElement) > 0) {
-            throw new IllegalArgumentException("");
-        }
         int left = border(fromElement);
         int right = border(toElement);
+        if (left == right)
+            throw new IllegalArgumentException("");
         return new ArraySet<>(elements.subList(left, right));
     }
 
