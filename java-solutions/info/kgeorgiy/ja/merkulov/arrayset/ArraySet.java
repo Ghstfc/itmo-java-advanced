@@ -9,18 +9,11 @@ public class ArraySet<E extends Comparable<? super E>> extends AbstractSet<E> im
     private final Comparator<E> comparator;
 
     public ArraySet() {
-        elements = new ArrayList<>();
-        comparator = null;
+        this(new ArrayList<>(), null);
     }
 
     public ArraySet(Collection<E> collection) {
-        // :NOTE: вынести
-        elements = new ArrayList<>();
-        TreeSet<E> treeSet = new TreeSet<>(collection);
-        elements.addAll(treeSet);
-        // :NOTE: не надо
-        Collections.sort(elements);
-        comparator = null;
+        this(collection, null);
     }
 
     public ArraySet(Collection<E> collection, Comparator<E> comparator) {
@@ -73,9 +66,9 @@ public class ArraySet<E extends Comparable<? super E>> extends AbstractSet<E> im
 
     @Override
     public E last() {
-        // :NOTE: скобочки
-        if (elements.isEmpty())
+        if (elements.isEmpty()) {
             throw new NoSuchElementException("ArraySet is empty");
+        }
         return elements.get(elements.size() - 1);
     }
 
