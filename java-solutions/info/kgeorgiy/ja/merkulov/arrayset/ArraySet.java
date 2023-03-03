@@ -14,8 +14,9 @@ public class ArraySet<E extends Comparable<? super E>> extends AbstractSet<E> im
     }
 
     public ArraySet(Collection<E> collection) {
-        elements = new ArrayList<>(collection);
-        // :NOTE: избавиться от повторов
+        elements = new ArrayList<>();
+        TreeSet<E> treeSet = new TreeSet<>(collection);
+        elements.addAll(treeSet);
         Collections.sort(elements);
         comparator = null;
     }
@@ -44,22 +45,21 @@ public class ArraySet<E extends Comparable<? super E>> extends AbstractSet<E> im
         if (comparator != null && comparator.compare(fromElement, toElement) > 0) {
             throw new IllegalArgumentException("");
         }
-        // :NOTE: будем кидать свой
         int left = border(fromElement);
         int right = border(toElement);
-        return new TreeSet<>(elements.subList(left, right));
+        return new ArraySet<>(elements.subList(left, right));
     }
 
     @Override
     public SortedSet<E> headSet(E toElement) {
         int right = border(toElement);
-        return new TreeSet<>(elements.subList(0, right));
+        return new ArraySet<>(elements.subList(0, right));
     }
 
     @Override
     public SortedSet<E> tailSet(E fromElement) {
         int left = border(fromElement);
-        return new TreeSet<>(elements.subList(left, elements.size()));
+        return new ArraySet<>(elements.subList(left, elements.size()));
     }
 
     @Override
