@@ -15,6 +15,7 @@ public class ArraySet<E extends Comparable<? super E>> extends AbstractSet<E> im
 
     public ArraySet(Collection<E> collection) {
         elements = new ArrayList<>(collection);
+        // :NOTE: избавиться от повторов
         Collections.sort(elements);
         comparator = null;
     }
@@ -35,18 +36,17 @@ public class ArraySet<E extends Comparable<? super E>> extends AbstractSet<E> im
 
     private int border(E element) {
         int index = Collections.binarySearch(elements, element, comparator);
-        if (index < 0)
-            index = -(index + 1);
-        return index;
+        return index < 0 ? -(index + 1) : index;
     }
 
     @Override
     public SortedSet<E> subSet(E fromElement, E toElement) {
-        int left = border(fromElement);
-        int right = border(toElement);
         if (comparator != null && comparator.compare(fromElement, toElement) > 0) {
             throw new IllegalArgumentException("");
         }
+        // :NOTE: будем кидать свой
+        int left = border(fromElement);
+        int right = border(toElement);
         return new TreeSet<>(elements.subList(left, right));
     }
 
