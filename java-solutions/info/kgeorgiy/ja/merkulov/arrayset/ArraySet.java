@@ -2,7 +2,6 @@ package info.kgeorgiy.ja.merkulov.arrayset;
 
 import java.util.*;
 
-@SuppressWarnings({"unchecked", "unused"})
 public class ArraySet<E extends Comparable<? super E>> extends AbstractSet<E> implements SortedSet<E> {
 
     private final List<E> elements;
@@ -83,6 +82,7 @@ public class ArraySet<E extends Comparable<? super E>> extends AbstractSet<E> im
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public boolean contains(Object o) {
         return Collections.binarySearch(elements, (E) o, comparator) >= 0;
     }
