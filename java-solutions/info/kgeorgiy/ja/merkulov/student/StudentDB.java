@@ -58,7 +58,7 @@ public class StudentDB implements StudentQuery {
     @Override
     public List<Student> sortStudentsById(Collection<Student> students) {
         return students.stream()
-                .sorted(Comparator.comparing(Student::getId))
+                .sorted(Comparator.naturalOrder())
                 .collect(Collectors.toList());
     }
 
