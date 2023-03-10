@@ -5,6 +5,7 @@ import info.kgeorgiy.java.advanced.student.Student;
 import info.kgeorgiy.java.advanced.student.StudentQuery;
 
 import java.util.*;
+import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -104,7 +105,7 @@ public class StudentDB implements StudentQuery {
                 .filter(student -> group.equals(student.getGroup()))
                 .collect(Collectors.toMap(Student::getLastName,
                         Student::getFirstName,
-                        (s1, s2) -> s1.compareTo(s2) < 0 ? s1 : s2));
+                        BinaryOperator.minBy(String::compareTo)));
     }
 
 }
