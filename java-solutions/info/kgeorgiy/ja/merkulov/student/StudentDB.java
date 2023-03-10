@@ -5,7 +5,6 @@ import info.kgeorgiy.java.advanced.student.Student;
 import info.kgeorgiy.java.advanced.student.StudentQuery;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -15,8 +14,8 @@ public class StudentDB implements StudentQuery {
 
     private <B> List<B> func(Function<? super Student, B> foo, List<Student> students) {
         return students.stream()
-                .map(foo).
-                collect(Collectors.toList());
+                .map(foo)
+                .collect(Collectors.toList());
     }
 
 
@@ -43,17 +42,17 @@ public class StudentDB implements StudentQuery {
     @Override
     public Set<String> getDistinctFirstNames(List<Student> students) {
         return students.stream()
+                .sorted(Comparator.comparing(Student::getFirstName))
                 .map(Student::getFirstName)
-                .sorted()
                 .collect(Collectors.toSet());
     }
 
     @Override
     public String getMaxStudentFirstName(List<Student> students) {
         return students.stream()
-                .max(Comparator.comparing(Student::getId))
-                .get()
-                .getFirstName();
+                .max(Student::compareTo)
+                .map(Student::getFirstName)
+                .orElse("");
     }
 
     @Override
@@ -63,20 +62,23 @@ public class StudentDB implements StudentQuery {
                 .collect(Collectors.toList());
     }
 
+
+    private final Comparator<Student> comparator = Comparator.comparing(Student::getLastName)
+            .thenComparing(Student::getFirstName)
+            .reversed()
+            .thenComparing(Student::compareTo);
+
     @Override
     public List<Student> sortStudentsByName(Collection<Student> students) {
         return students.stream()
-                .sorted(Comparator.comparing(Student::getFirstName)
-                        .thenComparing(Student::getLastName)
-                        .reversed()
-                        .thenComparing(Student::compareTo))
+                .sorted(comparator)
                 .collect(Collectors.toList());
     }
 
     private List<Student> finder(Predicate<? super Student> foo, Collection<Student> students) {
         return students.stream()
                 .filter(foo)
-                .sorted()
+                .sorted(comparator)
                 .collect(Collectors.toList());
     }
 
@@ -100,13 +102,9 @@ public class StudentDB implements StudentQuery {
     public Map<String, String> findStudentNamesByGroup(Collection<Student> students, GroupName group) {
         return students.stream()
                 .filter(student -> group.equals(student.getGroup()))
-                .filter(distinctByKey(Student::getFirstName))
                 .collect(Collectors.toMap(Student::getLastName,
-                        Student::getFirstName));
+                        Student::getFirstName,
+                        (s1, s2) -> s1.compareTo(s2) < 0 ? s1 : s2));
     }
 
-    private <T> Predicate<T> distinctByKey(Function<? super T, ?> keyExtractor) {
-        Map<Object, Boolean> seen = new ConcurrentHashMap<>();
-        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
-    }
 }
