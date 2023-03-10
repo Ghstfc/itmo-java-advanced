@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 public class StudentDB implements StudentQuery {
 
-    private <B> List<B> func(Function<? super Student, B> foo, List<Student> students) {
+    private <B> List<B> getter(Function<? super Student, B> foo, List<Student> students) {
         return students.stream()
                 .map(foo)
                 .collect(Collectors.toList());
@@ -22,22 +22,22 @@ public class StudentDB implements StudentQuery {
 
     @Override
     public List<String> getFirstNames(List<Student> students) {
-        return func(Student::getFirstName, students);
+        return getter(Student::getFirstName, students);
     }
 
     @Override
     public List<String> getLastNames(List<Student> students) {
-        return func(Student::getLastName, students);
+        return getter(Student::getLastName, students);
     }
 
     @Override
     public List<GroupName> getGroups(List<Student> students) {
-        return func(Student::getGroup, students);
+        return getter(Student::getGroup, students);
     }
 
     @Override
     public List<String> getFullNames(List<Student> students) {
-        return func(s -> s.getFirstName() + " " + s.getLastName(), students);
+        return getter(s -> s.getFirstName() + " " + s.getLastName(), students);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class StudentDB implements StudentQuery {
     }
 
 
-    private final Comparator<Student> comparator = Comparator.comparing(Student::getLastName)
+    private static final Comparator<Student> NAME_COMPARATOR = Comparator.comparing(Student::getLastName)
             .thenComparing(Student::getFirstName)
             .reversed()
             .thenComparing(Student::compareTo);
@@ -72,14 +72,14 @@ public class StudentDB implements StudentQuery {
     @Override
     public List<Student> sortStudentsByName(Collection<Student> students) {
         return students.stream()
-                .sorted(comparator)
+                .sorted(NAME_COMPARATOR)
                 .collect(Collectors.toList());
     }
 
     private List<Student> finder(Predicate<? super Student> foo, Collection<Student> students) {
         return students.stream()
                 .filter(foo)
-                .sorted(comparator)
+                .sorted(NAME_COMPARATOR)
                 .collect(Collectors.toList());
     }
 
