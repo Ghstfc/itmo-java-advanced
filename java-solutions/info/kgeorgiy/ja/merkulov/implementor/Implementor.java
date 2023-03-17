@@ -122,7 +122,8 @@ public class Implementor implements Impler {
 
     @Override
     public void implement(Class<?> token, Path root) throws ImplerException {
-        if (!token.isInterface() || Modifier.isPrivate(token.getModifiers())) {
+        if (!token.isInterface() || Modifier.isPrivate(token.getModifiers()) || token.isPrimitive() ||
+                token.isArray() || Modifier.isFinal(token.getModifiers()) || token == Enum.class) {
             throw new ImplerException("Wrong token");
         }
 
