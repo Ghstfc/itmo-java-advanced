@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -131,6 +132,7 @@ public class Implementor implements Impler {
         File newClass = filePath(token, root);
 
         StringBuilder sb = new StringBuilder();
+        // :NOTE: nio Files.newBufferedWriter()
         try (BufferedWriter wr = new BufferedWriter(new FileWriter(newClass))) {
             // Getting Header
             sb.append(headerImplementing(token));
