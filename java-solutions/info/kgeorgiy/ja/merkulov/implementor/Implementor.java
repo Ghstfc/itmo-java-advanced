@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class Implementor implements Impler {
 
@@ -140,5 +141,32 @@ public class Implementor implements Impler {
         } catch (IOException e) {
             throw new RuntimeException(e.getMessage() + " Can't write to file");
         }
+    }
+
+    public static void main(String[] args) {
+        if (args == null) {
+            System.err.println("No arguments");
+            return;
+        }
+        if (args.length != 2) {
+            System.err.println("More/less arguments, than 2");
+            return;
+        }
+        if (args[0] == null) {
+            System.err.println("First argument is null");
+            return;
+        }
+        if (args[1] == null) {
+            System.err.println("Second argument is null");
+            return;
+        }
+        try {
+            new Implementor().implement(Class.forName(args[0]), Paths.get(args[1]));
+        } catch (ImplerException e) {
+            System.err.println("ImplerException" + e.getMessage());
+        } catch (ClassNotFoundException e) {
+            System.err.println("ClassNotFound" + e.getMessage());
+        }
+
     }
 }
