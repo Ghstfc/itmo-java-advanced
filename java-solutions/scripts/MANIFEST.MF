@@ -1,0 +1,3 @@
+Manifest-Version: 1.0
+Created-By: Merkulov_Maksim
+Main-Class: info.kgeorgiy.ja.merkulov.implementor.Implementor
