@@ -263,12 +263,13 @@ public class Implementor implements Impler, JarImpler {
             String[] args = {pathOfImplementingFile + ".java",
                     "-cp",
                     // taken from kgeorgiy's code
-                    File.pathSeparator + Path.of(token.getProtectionDomain().getCodeSource().getLocation().toURI())
+                    File.pathSeparator + getClassPath(token)
             };
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             int exitCode = compiler.run(null, null, null, args);
-            if (exitCode != 0)
+            if (exitCode != 0) {
                 throw new ImplerException("Can't compile file");
+            }
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
@@ -281,5 +282,9 @@ public class Implementor implements Impler, JarImpler {
             throw new RuntimeException(e);
         }
 
+    }
+
+    private static Path getClassPath(Class<?> token) throws URISyntaxException {
+        return Path.of(token.getProtectionDomain().getCodeSource().getLocation().toURI());
     }
 }
