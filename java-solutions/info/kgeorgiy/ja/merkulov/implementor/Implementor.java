@@ -240,9 +240,9 @@ public class Implementor implements Impler, JarImpler {
             else
                 new Implementor().implementJar(Class.forName(args[1]), Paths.get(args[2]));
         } catch (ImplerException e) {
-            System.err.println("ImplerException" + e.getMessage());
+            System.err.println("ImplerException " + e.getMessage());
         } catch (ClassNotFoundException e) {
-            System.err.println("ClassNotFound" + e.getMessage());
+            System.err.println("ClassNotFound " + e.getMessage());
         }
 
     }
@@ -263,7 +263,9 @@ public class Implementor implements Impler, JarImpler {
             String[] args = {pathOfImplementingFile + ".java",
                     "-cp",
                     // taken from kgeorgiy's code
-                    File.pathSeparator + getClassPath(token)
+                    File.pathSeparator + getClassPath(token),
+                    "-encoding",
+                    "UTF-8"
             };
             JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
             int exitCode = compiler.run(null, null, null, args);
