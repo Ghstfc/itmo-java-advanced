@@ -1,3 +1,3 @@
 #!/bin/bash
 
-javadoc ./../java-solutions/info/kgeorgiy/ja/merkulov/implementor/Implementor.java -cp ./../../modules/info.kgeorgiy.java.advanced.implementor -d ./../javadoc
+javadoc ./../java-solutions/info/kgeorgiy/ja/merkulov/concurrent/IterativeParallelism.java -cp ./../../modules/info.kgeorgiy.java.advanced.concurrent -d ./../javadoc/concurrent
