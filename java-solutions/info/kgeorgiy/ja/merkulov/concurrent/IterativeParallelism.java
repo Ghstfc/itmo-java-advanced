@@ -55,6 +55,7 @@ public class IterativeParallelism implements ScalarIP {
                                   Function<List<? extends T>, Long> calculationOnParts,
                                   Function<List<? extends Long>, Integer> resultingCalculation)
             throws InterruptedException {
+// :NOTE: обощить
 
         List<List<? extends T>> parts = partition(threadsNum, values);
 
@@ -79,6 +80,7 @@ public class IterativeParallelism implements ScalarIP {
         for (int i = 0; i < size; i += partitionSize) {
             if (size - (i + partitionSize) == remainder) {
                 parts.add(values.subList(i, i + partitionSize + remainder));
+// :NOTE: равномернее распределить задачи
                 break;
             } else {
                 parts.add(values.subList(i, i + partitionSize));
@@ -101,13 +103,17 @@ public class IterativeParallelism implements ScalarIP {
         // waiting for all processes ending
         boolean isProcessing;
         do {
+
             isProcessing = false;
             for (Thread t : threads) {
+//                t.join();
+                // :NOTE:
                 if (t.isAlive()) {
                     isProcessing = true;
                     break;
                 }
             }
+
         } while (isProcessing);
     }
 
@@ -117,16 +123,15 @@ public class IterativeParallelism implements ScalarIP {
         return comparingImpl(threadsNum, values,
                 list -> list.stream().max(comparator).get(),
                 list -> list.stream().max(comparator).get()
-
         );
     }
 
     @Override
     public <T> T minimum(int threadsNum, List<? extends T> values, Comparator<? super T> comparator) throws InterruptedException {
+      // :NOTE:  можно переиспользовать
         return comparingImpl(threadsNum, values,
                 list -> list.stream().min(comparator).get(),
                 list -> list.stream().min(comparator).get()
-
         );
     }
 
@@ -150,6 +155,7 @@ public class IterativeParallelism implements ScalarIP {
 
     @Override
     public <T> int count(int threadsNum, List<? extends T> values, Predicate<? super T> predicate) throws InterruptedException {
+        // :NOTE: сразу в ...impl получать стрим, а не лист
         return countImpl(threadsNum, values,
                 list -> list.stream().filter(predicate).count(),
                 longs -> longs.stream().mapToInt(Long::intValue).sum()
