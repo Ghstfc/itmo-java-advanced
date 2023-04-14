@@ -86,7 +86,13 @@ public class ParallelMapperImpl implements ParallelMapper {
 //        finalNumber = args.size();
         for (int i = 0; i < args.size(); i++) {
             final int index = i;
-            addQueue(() -> result.setter(index, f.apply(args.get(index))));
+            try {
+                addQueue(() -> result.setter(index, f.apply(args.get(index))));
+            } catch (RuntimeException e) {
+                throw new InterruptedException("Some problems during applying function to values");
+            } finally {
+                close();
+            }
 //            addQueue(() -> set(index, f.apply(args.get(index))));
         }
         return result.asList();
@@ -122,7 +128,13 @@ public class ParallelMapperImpl implements ParallelMapper {
             runnable = pollQueue();
             queue.notifyAll();
         }
-        runnable.run();
+        try {
+            runnable.run();
+        } catch (RuntimeException e) {
+            throw new InterruptedException("Some problems during executing task");
+        } finally {
+            close();
+        }
     }
 
     private void addQueue(Runnable task) {
