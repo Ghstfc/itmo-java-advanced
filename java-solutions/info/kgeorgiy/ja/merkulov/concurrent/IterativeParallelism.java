@@ -27,9 +27,6 @@ public class IterativeParallelism implements ScalarIP {
         List<R> result = new ArrayList<>();
         List<Stream<? extends T>> parts = partition(threadsNum, values);
         if (parallelMapper == null) {
-            List<Thread> threads = new ArrayList<>();
-            // shared list
-
             mainCalc(calculationOnParts, parts, threads, result);
         } else {
             result = parallelMapper.map(calculationOnParts, parts);
@@ -44,23 +41,19 @@ public class IterativeParallelism implements ScalarIP {
         int partitionSize = size / threadsNum;
         int remainder = size % threadsNum;
         for (int i = 0; i < size; i += partitionSize) {
-            if (remainder > 0) {
-                parts.add(values.subList(i, i + partitionSize + 1).stream());
-                remainder--;
-                i++;
-            } else {
-                parts.add(values.subList(i, i + partitionSize).stream());
-            }
+            parts.add(values.subList(i, i + partitionSize + (remainder > 0 ? 1 : 0)).stream());
+            i += remainder > 0 ? 1 : 0;
+            remainder--;
         }
         return parts;
     }
 
 
-    private <T, R> void mainCalc(Function<Stream<? extends T>, R> calculationOnParts, List<Stream<? extends T>> parts,
-                                 List<Thread> threads, List<R> result) throws InterruptedException {
+    private <T, R> void mainCalc(Function<Stream<? extends T>, R> calculationOnParts, List<Stream<? extends T>> parts, List<R> result) throws InterruptedException {
         for (int i = 0; i < parts.size(); i++) {
             result.add(null);
         }
+        final List<Thread> threads = new ArrayList<>();
         for (int i = 0; i < parts.size(); i++) {
             final int index = i;
             threads.add(new Thread(() -> result.set(index, calculationOnParts.apply(parts.get(index)))));
