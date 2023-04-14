@@ -27,7 +27,7 @@ public class IterativeParallelism implements ScalarIP {
         List<R> result = new ArrayList<>();
         List<Stream<? extends T>> parts = partition(threadsNum, values);
         if (parallelMapper == null) {
-            mainCalc(calculationOnParts, parts, threads, result);
+            mainCalc(calculationOnParts, parts, result);
         } else {
             result = parallelMapper.map(calculationOnParts, parts);
         }
