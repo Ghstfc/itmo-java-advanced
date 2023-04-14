@@ -29,6 +29,7 @@ public class ParallelMapperImpl implements ParallelMapper {
         }
 
         public void setter(int index, T object) {
+            // :NOTE: synchronized
             synchronized (result) {
                 result.set(index, object);
                 currentNumber++;
@@ -37,15 +38,15 @@ public class ParallelMapperImpl implements ParallelMapper {
         }
 
         public List<T> asList() throws InterruptedException {
-            List<T> res;
             synchronized (result) {
+                List<T> res;
                 while (currentNumber != finalNumber) {
                     result.wait();
                 }
                 res = new ArrayList<>(result);
                 result.notifyAll();
+                return res;
             }
-            return res;
         }
     }
 
@@ -119,6 +120,8 @@ public class ParallelMapperImpl implements ParallelMapper {
     private void taskRunner() throws InterruptedException {
         Runnable runnable;
         synchronized (queue) {
+            // :NOTE: добиться, чтобы runnable не null
+            // :NOTE: перенести while в pollQueue вместо ifа
             while (queue.isEmpty()) {
                 queue.wait();
             }
@@ -127,13 +130,13 @@ public class ParallelMapperImpl implements ParallelMapper {
         }
 
         runnable.run();
-
+// :NOTE: обработать exception
     }
 
     private void addQueue(Runnable task) {
         synchronized (queue) {
             queue.add(task);
-            queue.notifyAll();
+            queue.notifyAll(); // :NOTE: нужен ли notify
         }
     }
 
@@ -159,6 +162,7 @@ public class ParallelMapperImpl implements ParallelMapper {
                 thread.join();
             } catch (InterruptedException ignored) {
             }
+            // :NOTE: дождаться
         }
     }
 }
