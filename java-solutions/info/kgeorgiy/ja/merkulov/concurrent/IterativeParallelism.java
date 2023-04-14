@@ -65,6 +65,7 @@ public class IterativeParallelism implements ScalarIP {
                 t.join();
             } catch (InterruptedException e) {
                 throw new InterruptedException("Some threads was interrupted by unknown problem " + e.getMessage());
+                // :NOTE: интераптить остальные
             }
         }
 
@@ -74,8 +75,8 @@ public class IterativeParallelism implements ScalarIP {
     @Override
     public <T> T maximum(int threadsNum, List<? extends T> values, Comparator<? super T> comparator) throws InterruptedException {
         return mainImpl(threadsNum, values,
-                list -> list.max(comparator).get(),
-                list -> list.stream().max(comparator).get()
+                list -> list.max(comparator).orElseThrow(),
+                list -> list.stream().max(comparator).orElseThrow()
         );
     }
 
