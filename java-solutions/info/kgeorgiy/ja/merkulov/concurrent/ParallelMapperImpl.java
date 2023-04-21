@@ -9,10 +9,6 @@ public class ParallelMapperImpl implements ParallelMapper {
 
     private final List<Thread> threads;
     private final Queue<Runnable> queue;
-//    private final List<Object> result;
-//    private int finalNumber;
-//    private int currentNumber;
-
 
     private static class Result<T> {
         private final List<T> result;
@@ -28,25 +24,20 @@ public class ParallelMapperImpl implements ParallelMapper {
             this.currentNumber = 0;
         }
 
-        public void setter(int index, T object) {
-            // :NOTE: synchronized
-            synchronized (result) {
-                result.set(index, object);
-                currentNumber++;
-                result.notifyAll();
-            }
+        public synchronized void setter(int index, T object) {
+            result.set(index, object);
+            currentNumber++;
+            notifyAll();
         }
 
-        public List<T> asList() throws InterruptedException {
-            synchronized (result) {
-                List<T> res;
-                while (currentNumber != finalNumber) {
-                    result.wait();
-                }
-                res = new ArrayList<>(result);
-                result.notifyAll();
-                return res;
+        public synchronized List<T> asList() throws InterruptedException {
+            List<T> res;
+            while (currentNumber != finalNumber) {
+                wait();
             }
+            res = new ArrayList<>(result);
+            notifyAll();
+            return res;
         }
     }
 
@@ -57,7 +48,6 @@ public class ParallelMapperImpl implements ParallelMapper {
         }
         threads = new ArrayList<>();
         queue = new ArrayDeque<>();
-//        result = new ArrayList<>();
         for (int i = 0; i < threadsNum; i++) {
             threads.add(new Thread(() -> {
                 try {
@@ -73,76 +63,57 @@ public class ParallelMapperImpl implements ParallelMapper {
         }
     }
 
-//    private void initRes(int number) {
-//        for (int i = 0; i < number; i++) {
-//            result.add(null);
-//        }
-//    }
-
 
     @Override
     public <T, R> List<R> map(Function<? super T, ? extends R> f, List<? extends T> args) throws InterruptedException {
         Result<R> result = new Result<>(args.size());
-//        initRes(args.size());
-//        finalNumber = args.size();
+        final boolean[] exception = {false};
         for (int i = 0; i < args.size(); i++) {
             final int index = i;
-
-            addQueue(() -> result.setter(index, f.apply(args.get(index))));
-
-
-//            addQueue(() -> set(index, f.apply(args.get(index))));
+            addQueue(() -> {
+                try {
+                    result.setter(index, f.apply(args.get(index)));
+                } catch (RuntimeException e) {
+                    exception[0] = true;
+                }
+            });
+        }
+        if (exception[0]) {
+            throw new RuntimeException("Some problems with running tasks");
         }
         return result.asList();
     }
-//
-//    private <R> List<R> asList() throws InterruptedException {
-//        List<R> res;
-//        synchronized (result) {
-//            while (currentNumber != finalNumber) {
-//                result.wait();
-//            }
-//            res = new ArrayList<>((Collection<? extends R>) result);
-//            result.notifyAll();
-//        }
-//        return res;
-//    }
-//
-//    private <R> void set(int index, R object) {
-//        synchronized (result) {
-//            result.set(index, object);
-//            currentNumber++;
-//            result.notifyAll();
-//        }
-//    }
 
 
     private void taskRunner() throws InterruptedException {
         Runnable runnable;
         synchronized (queue) {
             // :NOTE: добиться, чтобы runnable не null
-            // :NOTE: перенести while в pollQueue вместо ifа
             while (queue.isEmpty()) {
                 queue.wait();
             }
             runnable = pollQueue();
             queue.notifyAll();
         }
-
-        runnable.run();
-// :NOTE: обработать exception
+        try {
+            runnable.run();
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Problems with running task");
+        }
     }
 
     private void addQueue(Runnable task) {
         synchronized (queue) {
             queue.add(task);
-            queue.notifyAll(); // :NOTE: нужен ли notify
+            queue.notify();
         }
     }
 
     private Runnable pollQueue() {
         Runnable runnable = null;
         synchronized (queue) {
+            // как-будто бы, если вмсесто if поставить while, то будет грустно,
+            // ибо из очереди уйдут все задачи 1 потоку, чего мы не очень хотим
             if (!queue.isEmpty()) {
                 runnable = queue.poll();
             }
@@ -161,6 +132,15 @@ public class ParallelMapperImpl implements ParallelMapper {
             try {
                 thread.join();
             } catch (InterruptedException ignored) {
+            } finally {
+                boolean tr = true;
+                while (tr) {
+                    thread.interrupt();
+                    try {
+                        thread.join();
+                        tr = false;
+                    } catch (InterruptedException ignored){}
+                }
             }
             // :NOTE: дождаться
         }
