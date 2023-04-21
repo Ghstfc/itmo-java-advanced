@@ -78,22 +78,21 @@ public class ParallelMapperImpl implements ParallelMapper {
                 }
             });
         }
+        List<R> resultList = result.asList();
         if (exception[0]) {
             throw new RuntimeException("Some problems with running tasks");
         }
-        return result.asList();
+        return resultList;
     }
 
 
     private void taskRunner() throws InterruptedException {
         Runnable runnable;
         synchronized (queue) {
-            // :NOTE: добиться, чтобы runnable не null
             while (queue.isEmpty()) {
                 queue.wait();
             }
             runnable = pollQueue();
-            queue.notifyAll();
         }
         try {
             runnable.run();
@@ -112,12 +111,10 @@ public class ParallelMapperImpl implements ParallelMapper {
     private Runnable pollQueue() {
         Runnable runnable = null;
         synchronized (queue) {
-            // как-будто бы, если вмсесто if поставить while, то будет грустно,
-            // ибо из очереди уйдут все задачи 1 потоку, чего мы не очень хотим
             if (!queue.isEmpty()) {
                 runnable = queue.poll();
+                queue.notifyAll();
             }
-            queue.notifyAll();
         }
         return runnable;
     }
@@ -133,16 +130,15 @@ public class ParallelMapperImpl implements ParallelMapper {
                 thread.join();
             } catch (InterruptedException ignored) {
             } finally {
-                boolean tr = true;
-                while (tr) {
+                while (true) {
                     thread.interrupt();
                     try {
                         thread.join();
-                        tr = false;
-                    } catch (InterruptedException ignored){}
+                        break;
+                    } catch (InterruptedException ignored) {
+                    }
                 }
             }
-            // :NOTE: дождаться
         }
     }
 }
