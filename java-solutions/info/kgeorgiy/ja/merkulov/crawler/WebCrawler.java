@@ -12,71 +12,69 @@ public class WebCrawler implements Crawler {
 
 
     private final Downloader downloader;
-    private final ThreadPoolExecutor downloaders;
-    private final ThreadPoolExecutor extractors;
+    private final ExecutorService downloaders;
+    private final ExecutorService extractors;
 
     public WebCrawler(Downloader downloader, int downloaderNumber, int extractorNumber, int perHost) {
         this.downloader = downloader;
-        this.downloaders = new ThreadPoolExecutor(1, downloaderNumber, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<>());
-        this.extractors = new ThreadPoolExecutor(1, extractorNumber, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingDeque<>());
+        this.downloaders = Executors.newFixedThreadPool(downloaderNumber);
+        this.extractors = Executors.newFixedThreadPool(extractorNumber);
     }
 
     @Override
     public Result download(String url, int depth) {
         // nD -> ext -> nD
-        BlockingQueue<String> notDownloaded = new LinkedBlockingDeque<>();
+        ConcurrentLinkedQueue<String> notDownloaded = new ConcurrentLinkedQueue<>();
         notDownloaded.add(url);
-        BlockingQueue<String> extracted = new LinkedBlockingDeque<>();
+        ConcurrentLinkedQueue<String> extracted = new ConcurrentLinkedQueue<>();
         Set<String> alreadyDownloaded = ConcurrentHashMap.newKeySet();
         ConcurrentHashMap<String, IOException> errors = new ConcurrentHashMap<>();
-
         for (int i = depth; i >= 1; i--) {
 
-            CountDownLatch done = new CountDownLatch(notDownloaded.size());
-
+            Phaser phaser = new Phaser(1);
+            final int curDepth = i;
             while (!notDownloaded.isEmpty()) {
                 String s = notDownloaded.poll();
-                downloaders.submit(() -> downloader(alreadyDownloaded, extracted, s, errors, done));
+                if (!alreadyDownloaded.contains(s) && !errors.containsKey(s)) {
+                    phaser.register();
+                    downloaders.submit(() -> downloader(alreadyDownloaded, extracted, s, errors, phaser, curDepth));
+                    alreadyDownloaded.add(s);
+                }
             }
-            try {
-                done.await();
-                notDownloaded.addAll(extracted);
-                extracted.clear();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            phaser.arriveAndAwaitAdvance();
+            notDownloaded.addAll(extracted);
+            extracted.clear();
         }
         return new Result(new ArrayList<>(alreadyDownloaded), errors);
     }
 
 
-    private void downloader(Set<String> alreadyDownloaded, BlockingQueue<String> extracted, String url, ConcurrentHashMap<String,
-            IOException> errors, CountDownLatch done) {
+    private void downloader(Set<String> alreadyDownloaded, ConcurrentLinkedQueue<String> extracted,
+                            String url, ConcurrentHashMap<String, IOException> errors, Phaser done, int curDepth) {
 
-        if (alreadyDownloaded.contains(url)) {
-            done.countDown();
-            return;
-        }
         try {
-            alreadyDownloaded.add(url);
             Document doc = downloader.download(url);
-            extractors.execute(() -> extractor(extracted, doc, errors, url, done));
-
+            alreadyDownloaded.add(url);
+            if (curDepth == 1) {
+                done.arrive();
+                return;
+            }
+            extractors.submit(() -> extractor(extracted, doc, done));
         } catch (IOException e) {
-            done.countDown();
+            alreadyDownloaded.remove(url);
             errors.putIfAbsent(url, e);
+            done.arrive();
         }
     }
 
-    private void extractor(BlockingQueue<String> extracted, Document doc, ConcurrentHashMap<String, IOException> errors,
-                           String url, CountDownLatch done) {
+    private void extractor(ConcurrentLinkedQueue<String> extracted, Document doc,
+                           Phaser done) {
         try {
             List<String> urls = doc.extractLinks();
             extracted.addAll(urls);
-            done.countDown();
-        } catch (IOException e) {
-            errors.putIfAbsent(url, e);
-            done.countDown();
+        } catch (IOException ignored) {
+        } finally {
+            done.arrive();
         }
     }
 
@@ -95,7 +93,13 @@ public class WebCrawler implements Crawler {
             if (arg == null)
                 throw new RuntimeException("Some arguments are null");
         }
-
+        for (int i = 1; i < args.length; i++) {
+            try {
+                Integer.parseInt(args[i]);
+            } catch (RuntimeException e) {
+                throw new RuntimeException("There are not numbers in params");
+            }
+        }
         try (WebCrawler crawler = new WebCrawler(new CachingDownloader(1), Integer.parseInt(args[2]),
                 Integer.parseInt(args[3]), Integer.parseInt(args[4]))) {
             Result res = crawler.download(args[0], Integer.parseInt(args[1]));
