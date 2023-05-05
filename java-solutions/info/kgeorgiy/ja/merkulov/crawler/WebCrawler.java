@@ -59,15 +59,16 @@ public class WebCrawler implements Crawler {
             Document doc = downloader.download(url);
             alreadyDownloaded.add(url);
             if (curDepth == 1) {
+                done.arrive();
                 return;
             }
             extractors.submit(() -> extractor(extracted, doc, done));
         } catch (IOException e) {
             alreadyDownloaded.remove(url);
             errors.putIfAbsent(url, e);
-//            done.arrive();
-        } finally {
             done.arrive();
+        } finally {
+//            done.arrive();
         }
     }
 
@@ -85,6 +86,7 @@ public class WebCrawler implements Crawler {
 
     @Override
     public void close() {
+        // https://docs.oracle.com/en/java/javase/20/docs/api/java.base/java/util/concurrent/ExecutorService.html
         downloaders.shutdownNow();
         extractors.shutdownNow();
     }
