@@ -24,17 +24,20 @@ public class WebCrawler implements Crawler {
     @Override
     public Result download(String url, int depth) {
         // nD -> ext -> nD
-        ConcurrentLinkedQueue<String> notDownloaded = new ConcurrentLinkedQueue<>();
-        notDownloaded.add(url);
+        ConcurrentLinkedQueue<String> nextLayer = new ConcurrentLinkedQueue<>();
+        nextLayer.add(url);
         ConcurrentLinkedQueue<String> extracted = new ConcurrentLinkedQueue<>();
         Set<String> alreadyDownloaded = ConcurrentHashMap.newKeySet();
         ConcurrentHashMap<String, IOException> errors = new ConcurrentHashMap<>();
+
+        // :NOTE: Phaser need here
+
         for (int i = depth; i >= 1; i--) {
 
             Phaser phaser = new Phaser(1);
             final int curDepth = i;
-            while (!notDownloaded.isEmpty()) {
-                String s = notDownloaded.poll();
+            while (!nextLayer.isEmpty()) {
+                String s = nextLayer.poll();
                 if (!alreadyDownloaded.contains(s) && !errors.containsKey(s)) {
                     phaser.register();
                     downloaders.submit(() -> downloader(alreadyDownloaded, extracted, s, errors, phaser, curDepth));
@@ -42,7 +45,7 @@ public class WebCrawler implements Crawler {
                 }
             }
             phaser.arriveAndAwaitAdvance();
-            notDownloaded.addAll(extracted);
+            nextLayer.addAll(extracted);
             extracted.clear();
         }
         return new Result(new ArrayList<>(alreadyDownloaded), errors);
@@ -56,13 +59,14 @@ public class WebCrawler implements Crawler {
             Document doc = downloader.download(url);
             alreadyDownloaded.add(url);
             if (curDepth == 1) {
-                done.arrive();
                 return;
             }
             extractors.submit(() -> extractor(extracted, doc, done));
         } catch (IOException e) {
             alreadyDownloaded.remove(url);
             errors.putIfAbsent(url, e);
+//            done.arrive();
+        } finally {
             done.arrive();
         }
     }
@@ -86,6 +90,7 @@ public class WebCrawler implements Crawler {
     }
 
     public static void main(String[] args) {
+        // :NOTE: WebCrawler url [depth [downloads [extractors [perHost]]]]
         if (args.length != 5) {
             throw new RuntimeException("Not 5 args");
         }
