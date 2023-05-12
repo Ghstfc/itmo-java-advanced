@@ -7,12 +7,15 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.Objects;
+import java.util.Scanner;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 public class HelloUDPServer implements HelloServer {
 
+    public static final String CLOSE = "CLOSE";
     public static final int TIMEOUT = 50;
     private ExecutorService executors;
     private DatagramSocket socket;
@@ -79,9 +82,13 @@ public class HelloUDPServer implements HelloServer {
                 throw new RuntimeException("Parameter is not number");
             }
         }
-        try (HelloUDPServer server = new HelloUDPServer()) {
-            server.start(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
-            // :NOTE: сервер тут же выключается
+        HelloUDPServer server = new HelloUDPServer();
+        server.start(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
+        Scanner sc = new Scanner(System.in);
+        String message = "";
+        while (!Objects.equals(message, CLOSE)) {
+            message = sc.next();
         }
+        server.close();
     }
 }
