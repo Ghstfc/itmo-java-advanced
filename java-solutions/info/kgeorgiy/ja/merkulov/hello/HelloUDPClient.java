@@ -27,9 +27,8 @@ public class HelloUDPClient implements HelloClient {
                     InetAddress address = InetAddress.getByName(host);
                     socket.setSoTimeout(TIMEOUT);
                     for (int j = 1; j <= requests; j++) {
-                        String toSen = (prefix + finalI + "_" + j);
-                        boolean tr = true;
-                        while (tr) {
+                        String toSen = prefix + finalI + "_" + j;
+                        while (true) {
                             try {
                                 DatagramPacket packet = new DatagramPacket(toSen.getBytes(), toSen.getBytes().length, address, port);
                                 socket.send(packet);
@@ -39,7 +38,7 @@ public class HelloUDPClient implements HelloClient {
                                 String qoute = new String(packet.getData(), 0, packet.getLength());
                                 if (qoute.contains(toSen)) {
                                     System.out.println(qoute);
-                                    tr = false;
+                                    break;
                                 }
                             } catch (IOException e) {
                                 System.err.println("Can't receive packet : " + e.getMessage());
@@ -48,9 +47,9 @@ public class HelloUDPClient implements HelloClient {
                     }
 
                 } catch (UnknownHostException e) {
-                    System.err.println("Unknown host :" + e.getMessage());
+                    System.err.println("Unknown host: " + e.getMessage());
                 } catch (SocketException e) {
-                    throw new RuntimeException(e);
+                    System.err.println("Socket exception: " + e.getMessage());
                 } finally {
                     phaser.arrive();
                 }
@@ -79,7 +78,5 @@ public class HelloUDPClient implements HelloClient {
         checker(args[4]);
         HelloUDPClient client = new HelloUDPClient();
         client.run(args[0], Integer.parseInt(args[1]), args[2], Integer.parseInt(args[3]), Integer.parseInt(args[4]));
-
-
     }
 }
