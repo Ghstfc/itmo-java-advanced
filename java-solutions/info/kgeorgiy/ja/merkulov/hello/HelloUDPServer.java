@@ -57,8 +57,9 @@ public class HelloUDPServer implements HelloServer {
             if (!executors.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS)) {
                 executors.shutdownNow(); // Cancel currently executing tasks
                 // Wait a while for tasks to respond to being cancelled
-                if (!executors.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS))
+                if (!executors.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS)) {
                     System.err.println("Pool did not terminate");
+                }
             }
         } catch (InterruptedException e) {
             executors.shutdownNow();
@@ -80,6 +81,7 @@ public class HelloUDPServer implements HelloServer {
         }
         try (HelloUDPServer server = new HelloUDPServer()) {
             server.start(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
+            // :NOTE: сервер тут же выключается
         }
     }
 }
