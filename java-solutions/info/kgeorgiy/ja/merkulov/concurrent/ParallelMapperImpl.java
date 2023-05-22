@@ -2,20 +2,43 @@ package info.kgeorgiy.ja.merkulov.concurrent;
 
 import info.kgeorgiy.java.advanced.mapper.ParallelMapper;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Queue;
 import java.util.function.Function;
 
 public class ParallelMapperImpl implements ParallelMapper {
 
     private final List<Thread> threads;
-    private final Queue<Runnable> queue;
+    private final SyncQueue queue;
 
-    private static class Result<T> {
+    private static class SyncQueue {
+        private final Queue<Runnable> queue;
+
+        public SyncQueue(Queue<Runnable> queue) {
+            this.queue = queue;
+        }
+
+        synchronized void add(Runnable task) {
+            queue.add(task);
+            notifyAll();
+        }
+
+        synchronized Runnable poll() throws InterruptedException {
+            while (queue.isEmpty())
+                wait();
+            return queue.poll();
+        }
+
+    }
+
+    private static class SyncList<T> {
         private final List<T> result;
         private final int finalNumber;
         private int currentNumber;
 
-        private Result(int number) {
+        private SyncList(int number) {
             this.finalNumber = number;
             this.result = new ArrayList<>(number);
             for (int i = 0; i < number; i++) {
@@ -47,7 +70,7 @@ public class ParallelMapperImpl implements ParallelMapper {
             throw new InterruptedException("incorrect number of threads");
         }
         threads = new ArrayList<>();
-        queue = new ArrayDeque<>();
+        queue = new SyncQueue(new ArrayDeque<>());
         for (int i = 0; i < threadsNum; i++) {
             threads.add(new Thread(() -> {
                 try {
@@ -66,11 +89,11 @@ public class ParallelMapperImpl implements ParallelMapper {
 
     @Override
     public <T, R> List<R> map(Function<? super T, ? extends R> f, List<? extends T> args) throws InterruptedException {
-        Result<R> result = new Result<>(args.size());
+        SyncList<R> result = new SyncList<>(args.size());
         final boolean[] exception = {false};
         for (int i = 0; i < args.size(); i++) {
             final int index = i;
-            addQueue(() -> {
+            queue.add(() -> {
                 try {
                     result.setter(index, f.apply(args.get(index)));
                 } catch (RuntimeException e) {
@@ -88,35 +111,14 @@ public class ParallelMapperImpl implements ParallelMapper {
 
     private void taskRunner() throws InterruptedException {
         Runnable runnable;
-        synchronized (queue) {
-            while (queue.isEmpty()) {
-                queue.wait();
-            }
-            runnable = pollQueue();
-        }
+
+        runnable = queue.poll();
+
         try {
             runnable.run();
         } catch (RuntimeException e) {
             throw new RuntimeException("Problems with running task");
         }
-    }
-
-    private void addQueue(Runnable task) {
-        synchronized (queue) {
-            queue.add(task);
-            queue.notify();
-        }
-    }
-
-    private Runnable pollQueue() {
-        Runnable runnable = null;
-        synchronized (queue) {
-            if (!queue.isEmpty()) {
-                runnable = queue.poll();
-                queue.notifyAll();
-            }
-        }
-        return runnable;
     }
 
 
