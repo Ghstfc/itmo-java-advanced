@@ -1,7 +1,6 @@
 package info.kgeorgiy.ja.merkulov.i18n;
 
 public class TextStats {
-
     String maxSegment;
     String minSegment;
     String maxLexic;

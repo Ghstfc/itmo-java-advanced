@@ -7,5 +7,4 @@ public class NumberStats {
     double minValue;
     double sum;
     double averageNumber;
-    String symbol;
 }

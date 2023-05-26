@@ -4,7 +4,7 @@ import java.util.ListResourceBundle;
 
 public class UsageResourceBundle_ru extends ListResourceBundle {
 
-
+// :NOTE: properties
     private static final Object[][] CONTENTS = {
             {"analyzed", "Анализируемый файл"},
             {"unique", "Различных"},
@@ -39,11 +39,11 @@ public class UsageResourceBundle_ru extends ListResourceBundle {
             {"averageNumber", "Среднее число"},
 
 
-            {"moneyStats", "Статистика по суммам денег"},
-            {"moneyNumber", "Число сумм"},
-            {"minMoney", "Минимальная сумма"},
-            {"maxMoney", "Максимальная сумма"},
-            {"averageMoney", "Средняя сумма"},
+            {"money.stats", "Статистика по суммам денег"},
+            {"money.number", "Число сумм"},
+            {"money.min", "Минимальная сумма"},
+            {"money.max", "Максимальная сумма"},
+            {"money.average", "Средняя сумма"},
 
             {"dateStats", "Статистика по датам"},
             {"dateNumber", "Число дат"},

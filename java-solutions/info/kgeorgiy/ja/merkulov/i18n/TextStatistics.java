@@ -48,6 +48,7 @@ public class TextStatistics {
                 bundle = ResourceBundle.getBundle("info.kgeorgiy.ja.merkulov.i18n.UsageResourceBundle_en");
             }
 
+            // :NOTE: try-with-resources
             BufferedWriter writer = new BufferedWriter(new FileWriter(args[3], StandardCharsets.UTF_8));
             DateStats dateStats = calculator.getDateStats();
             NumberStats numberStats = calculator.getNumberStats();
@@ -80,13 +81,13 @@ public class TextStatistics {
         );
     }
 
-    private static void writeMoneyStats(ResourceBundle bundle, BufferedWriter writer, NumberStats moneyStats) throws IOException {
+    private static void writeMoneyStats(ResourceBundle bundle, BufferedWriter writer, NumberStats moneyStats, String type) throws IOException {
         writer.write(
                 bundle.getString("moneyStats") + EOL +
                         TAB + bundle.getString("moneyNumber") + DOTS + moneyStats.count + EOL +
                         TAB + bundle.getString("minMoney") + DOTS + moneyStats.minValue + EOL +
-                        TAB + bundle.getString("maxMoney") + DOTS + moneyStats.maxValue + EOL +
-                        TAB + bundle.getString("averageMoney") + DOTS + moneyStats.averageNumber + EOL + EOL
+                        TAB + bundle.getString(type + "max") + DOTS + moneyStats.maxValue + EOL +
+                        TAB + bundle.getString(type + "average") + DOTS + moneyStats.averageNumber + EOL + EOL
         );
     }
 
