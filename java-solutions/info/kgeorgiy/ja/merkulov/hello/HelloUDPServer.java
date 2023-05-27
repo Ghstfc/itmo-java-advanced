@@ -55,6 +55,8 @@ public class HelloUDPServer implements HelloServer {
 
     @Override
     public void close() {
+        if (executors == null)
+            return;
         executors.shutdown();
         try {
             if (!executors.awaitTermination(TIMEOUT, TimeUnit.MILLISECONDS)) {
